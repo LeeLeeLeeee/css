@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        html,
+        body {
+            height: 100%;
+        }
+        .container {
+            margin: .3em;
+            padding: 0.5em;
+            border: 1px solid gray;
+            border-radius: .3rem;
+            display: grid;
+            -ms-grid: -ms-grid;
+            height: 99%;
+        }
+        #main-container {
+            grid-template-columns: 1fr 3fr;
+            background-color: #333333;
+        }
+        #main-container > div {
+            margin: .3rem;
+            border-radius: .3rem;
+            padding: .3rem;
+        }
+        .css-list {
+            cursor: pointer;
+        }
+        #description {
+            position: absolute;
+            background-color: rgba(43, 43, 43, 0.808);
+            top:0px;
+            font-weight: bold;
+            padding: .3rem;
+            color:rgb(0, 172, 0);
+        }
+        #button-box {
+            display: grid;
+            grid-template-columns: repeat(2, 50%);
+            gap: 2px 2px;
+        }
+        #button-box > button:nth-child(1) {
+            grid-column: 1 / 3
+        }
+        #test-grid-container {
+            display: grid;
+        }
+    </style>
+</head>
+<body>
+    <div id="description">
+    </div>
+    <div id="main-container" class="container">
+        <div style="background-color: rgba(248, 248, 248, 0.926);display: flex;flex-direction: column;">
+            <div style="padding:.3rem;font-weight: bold;">Grid 스타일 편집기</div>
+            <div id="button-box">
+                <button type="button" value=""  class="item-btn css-save">Save</button>
+                <button type="button" value="1" class="item-btn type-change">Container</button>
+                <button type="button" value="2" class="item-btn type-change">item</button>
+            </div>
+            <div id="css-list-box" style="flex:1;padding-top: .3rem;">
+            </div>
+        </div>
+        <div style="background-color: rgba(255, 255, 255, 0.583);display: flex;flex-direction: column;">
+            <div>
+                <button type="button" value="1" class="box-button">GRID ITEM [+]</button>
+                <button type="button" value="2" class="box-button">GRID ITEM [-]</button>
+            </div>
+            <div id="test-grid-container">
+
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    var item_prop = [
+        {
+            "prop": "grid-row-start",
+            "des": "그리드 아이템(Item)의 행 시작 위치 지정",
+            "value":""
+        },
+        {
+            "prop": "grid-row-end",
+            "des": "그리드 아이템의 행 끝 위치 지정",
+            "value":""
+        },
+        {
+            "prop": "grid-row",
+            "des": "grid-row-xxx의 단축 속성(행 시작/끝 위치)",
+            "value":""
+        },
+        {
+            "prop": "grid-column-start",
+            "des": "그리드 아이템의 열 시작 위치 지정",
+            "value":""
+        },
+        {
+            "prop": "grid-column-end",
+            "des": "그리드 아이템의 열 끝 위치 지정",
+            "value":""
+        },
+        {
+            "prop": "grid-column",
+            "des": "grid-column-xxx의 단축 속성(열 시작/끝 위치)",
+            "value":""
+        },
+        {
+            "prop": "grid-area",
+            "des": "영역(Area) 이름을 설정하거나, grid-row와 grid-column의 단축 속성",
+            "value":""
+        },
+        {
+            "prop": "align-self",
+            "des": "단일 그리드 아이템을 수직(열 축) 정렬",
+            "value":""
+        },
+        {
+            "prop": "justify-self",
+            "des": "단일 그리드 아이템을 수평(행 축) 정렬",
+            "value":""
+        },
+        {
+            "prop": "place-self",
+            "des": "align-self와 justify-self의 단축 속성",
+            "value":""
+        },
+        {
+            "prop": "order",
+            "des": "그리드 아이템의 배치 순서를 지정",
+            "value":""
+        },
+        {
+            "prop": "z-index",
+            "des": "그리드 아이템의 쌓이는 순서를 지정",
+            "value":""
+        }
+    ]
+    var container_prop = [
+        {
+            "prop": "grid-template-rows",
+            "des": "명시적 행(Track)의 크기를 정의",
+            "value":""
+        },
+        {
+            "prop": "grid-template-columns",
+            "des": "명시적 열(Track)의 크기를 정의",
+            "value":""
+        },
+        {
+            "prop": "grid-template-areas",
+            "des": "영역(Area) 이름을 참조해 템플릿 생성",
+            "value":""
+        },
+        {
+            "prop": "grid-template",
+            "des": "grid-template-xxx의 단축 속성",
+            "value":""
+        },
+        {
+            "prop": "row-gap",
+            "des": "행과 행 사이의 간격(Line)을 정의",
+            "value":""
+        },
+        {
+            "prop": "column-gap",
+            "des": "열과 열 사이의 간격(Line)을 정의",
+            "value":""
+        },
+        {
+            "prop": "gap(grid-gap)",
+            "des": "xxx-gap의 단축 속성",
+            "value":""
+        },
+        {
+            "prop": "grid-auto-rows",
+            "des": "암시적인 행(Track)의 크기를 정의",
+            "value":""
+        },
+        {
+            "prop": "grid-auto-columns",
+            "des": "암시적인 열(Track)의 크기를 정의",
+            "value":""
+        },
+        {
+            "prop": "grid-auto-flow",
+            "des": "자동 배치 알고리즘 방식을 정의",
+            "value":""
+        },
+        {
+            "prop": "grid",
+            "des": "grid-template-xxx과 grid-auto-xxx의 단축 속성",
+            "value":""
+        },
+        {
+            "prop": "align-content",
+            "des": "그리드 콘텐츠(Grid Contents)를 수직(열 축) 정렬",
+            "value":""
+        },
+        {
+            "prop": "justify-content",
+            "des": "그리드 콘텐츠를 수평(행 축) 정렬",
+            "value":""
+        },
+        {
+            "prop": "place-content",
+            "des": "align-content와 justify-content의 단축 속성",
+            "value":""
+        },
+        {
+            "prop": "align-items",
+            "des": "그리드 아이템(Items)들을 수직(열 축) 정렬",
+            "value":""
+        },
+        {
+            "prop": "justify-items",
+            "des": "그리드 아이템들을 수평(행 축) 정렬",
+            "value":""
+        },
+        {
+            "prop": "place-items",
+            "des": "align-items와 justify-items의 단축 속성",
+            "value":""
+        }
+    ]
+
+    $(".type-change").click(function(e){
+        let css_list = e.target.value === "1" ? container_prop : item_prop;
+        $("#css-list-box").html("")
+        for(const css of css_list) {
+            $("#css-list-box").append(`
+                <div>
+                    <label class='css-list' title='${css.des}'>
+                        <input type='checkbox' name='${css.prop}' />
+                        ${css.prop}
+                    </label>
+                </div>
+            `)
+        }
+    })
+
+    $("body")
+    .on("mouseenter",".css-list",(e)=>{
+        document.getElementById("description").innerHTML = e.target.title
+    })
+    .on("mouseleave",".css-list",(e)=>{
+        document.getElementById("description").innerHTML = "";
+    })
+    
+    $("body")
+    .on("click", "input[type=checkbox]", (e)=>{
+        if(e.target.checked){
+            $(e.target).parent().append(`<input type='text' name='${e.target.name}-value' />`)
+        } else {
+            $(e.target).next("input").remove();
+        }
+    });
+
+    $(".box-button").click((e)=>{
+        if(e.target.value === "1"){
+            $("#test-grid-container").append(`<div>${$("#test-grid-container > div").length + 1}</div>`)
+        } else {
+            $("#test-grid-container > div:last-child").remove()
+        }
+    })
+    
+
+</script>
+
+</html>
