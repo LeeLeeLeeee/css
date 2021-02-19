@@ -50,6 +50,11 @@
         #test-grid-container {
             display: grid;
         }
+        .grid-item {
+            padding:.3rem;
+            border: 1px solid black;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -59,9 +64,9 @@
         <div style="background-color: rgba(248, 248, 248, 0.926);display: flex;flex-direction: column;">
             <div style="padding:.3rem;font-weight: bold;">Grid 스타일 편집기</div>
             <div id="button-box">
-                <button type="button" value=""  class="item-btn css-save">Save</button>
-                <button type="button" value="1" class="item-btn type-change">Container</button>
-                <button type="button" value="2" class="item-btn type-change">item</button>
+                <button type="button" value=""  class="css-save">Save</button>
+                <button type="button" value="1" class="type-change">Container</button>
+                <button type="button" value="2" class="type-change">item</button>
             </div>
             <div id="css-list-box" style="flex:1;padding-top: .3rem;">
             </div>
@@ -78,6 +83,12 @@
     </div>
 </body>
 <script>
+
+    var grid_type = ""
+    var item_list = {
+
+    }
+
     var item_prop = [
         {
             "prop": "grid-row-start",
@@ -117,12 +128,14 @@
         {
             "prop": "align-self",
             "des": "단일 그리드 아이템을 수직(열 축) 정렬",
-            "value":""
+            "value":"",
+            "limit":",start,end,center,stretch"
         },
         {
             "prop": "justify-self",
             "des": "단일 그리드 아이템을 수평(행 축) 정렬",
-            "value":""
+            "value":"",
+            "limit":",start,end,center,stretch"
         },
         {
             "prop": "place-self",
@@ -189,7 +202,8 @@
         {
             "prop": "grid-auto-flow",
             "des": "자동 배치 알고리즘 방식을 정의",
-            "value":""
+            "value":"",
+            "limit":",column,row,column dense,row dense"
         },
         {
             "prop": "grid",
@@ -199,12 +213,14 @@
         {
             "prop": "align-content",
             "des": "그리드 콘텐츠(Grid Contents)를 수직(열 축) 정렬",
-            "value":""
+            "value":"",
+            "limit":",start,end,center,stretch,space-around,space-between"
         },
         {
             "prop": "justify-content",
             "des": "그리드 콘텐츠를 수평(행 축) 정렬",
-            "value":""
+            "value":"",
+            "limit":",start,end,center,stretch,space-around,space-between"
         },
         {
             "prop": "place-content",
@@ -214,12 +230,14 @@
         {
             "prop": "align-items",
             "des": "그리드 아이템(Items)들을 수직(열 축) 정렬",
-            "value":""
+            "value":"",
+            "limit":",start,end,center,stretch"
         },
         {
             "prop": "justify-items",
             "des": "그리드 아이템들을 수평(행 축) 정렬",
-            "value":""
+            "value":"",
+            "limit":",start,end,center,stretch"
         },
         {
             "prop": "place-items",
@@ -227,15 +245,59 @@
             "value":""
         }
     ]
+    const color_list = [
+        'indianred',
+        'firebrick',
+        'palegoldenrod',
+        'cornflowerblue',
+        'coral',
+        'orchid',
+        'yellowgreen'
+    ]
 
+    const fn_admit_style_to_grid = function() {
+        let container = document.getElementById('test-grid-container')
+        container.removeAttribute('style')
+        container.setAttribute('style', 
+            container_prop
+            .filter((item)=> item.value !== "")
+            .map((item) => `${item.prop}:${item.value}`)
+            .join(';')
+        )
+
+
+    }
     $(".type-change").click(function(e){
         let css_list = e.target.value === "1" ? container_prop : item_prop;
+        grid_type = e.target.value === "1" ? "container" : "item"
         $("#css-list-box").html("")
+        if(e.target.value === "2") {
+            let item_len = $("#test-grid-container > div").length
+            if(!item_len) {
+                alert("ITEM을 먼저 추가해주세요.");
+                return false;
+            }
+            $("#css-list-box").append(
+                `
+                <SELECT NAME='grid-item'>
+                ${
+                    Array(item_len)
+                    .fill('')
+                    .map((e, i)=> `<option value=${i+1}>${i+1}</option>`)
+                    .join('')
+                }
+                </SELECT>
+                `
+            )
+        }
         for(const css of css_list) {
             $("#css-list-box").append(`
                 <div>
                     <label class='css-list' title='${css.des}'>
-                        <input type='checkbox' name='${css.prop}' />
+                        <input type='checkbox' 
+                                name='${css.prop}'
+                                data-value=''${css.value}
+                                data-limit='${css.limit || ""}' />
                         ${css.prop}
                     </label>
                 </div>
@@ -254,17 +316,74 @@
     $("body")
     .on("click", "input[type=checkbox]", (e)=>{
         if(e.target.checked){
-            $(e.target).parent().append(`<input type='text' name='${e.target.name}-value' />`)
+            if(e.target.getAttribute('data-limit') !== '') {
+                $(e.target).parent().append(
+                    `
+                    <SELECT>
+                        ${
+                            e.target.getAttribute('data-limit')
+                            .split(',')
+                            .map((text)=> `<option value='${text}'>${text}</option>`)
+                            .join('')
+                        }
+                    </SELECT>    
+                    `
+                );
+            } else {
+                $(e.target).parent().append(
+                    `<input type='text' />`
+                );
+            }
+            
         } else {
             $(e.target).next("input").remove();
         }
     });
 
     $(".box-button").click((e)=>{
+        
         if(e.target.value === "1"){
-            $("#test-grid-container").append(`<div>${$("#test-grid-container > div").length + 1}</div>`)
+            let item_len = $("#test-grid-container > div").length + 1
+            $("#test-grid-container").append(
+                `<div style='background-color:${ color_list[item_len % 8] }' 
+                        class='grid-item' data-id='${item_len}'>
+                    ${item_len}
+                </div>`
+            )
         } else {
-            $("#test-grid-container > div:last-child").remove()
+            $("#test-grid-container > div:last-child").remove();
+        }
+    })
+
+    $(".css-save").click(function(e){
+        if(grid_type === "") {
+            alert("편집할 스타일을 먼저 선택해주세요.");
+            return false;
+        } else {
+            let grid_target = 
+                grid_type === "container" 
+                ? container_prop
+                : item_prop
+
+            $(".css-list").each((i, target)=>{
+                if(target.children[0].checked){
+                    grid_target.some((item)=>{
+                        if(target.children[0].getAttribute('name') === item.prop){
+                            item.value = target.children[1].value
+                            return true;
+                        }
+                    }); 
+                } else {
+                    grid_target.some((item)=>{
+                        if(target.children[0].getAttribute('name') === item.prop){
+                            item.value = '';
+                            return true;
+                        }
+                    });
+                    return true;
+                }
+            })
+            fn_admit_style_to_grid();
         }
     })
     
