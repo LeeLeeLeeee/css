@@ -263,15 +263,51 @@
             .filter((item)=> item.value !== "")
             .map((item) => `${item.prop}:${item.value}`)
             .join(';')
-        )
-
-
+        );
+        
+        Object.keys(item_list).forEach(key => {
+            let target = $(`.grid-item[data-id=${key}]`).get(0);
+            target.removeAttribute('style');
+            target.setAttribute('style',
+                item_list[key]
+                .filter((item)=> item.value !== "")
+                .map((item)=> `${item.prop}:${item.value}`)
+                .join(';')
+                +
+                `;background-color:${ color_list[+key % 8]}`
+            )
+        });
     }
-    $(".type-change").click(function(e){
-        let css_list = e.target.value === "1" ? container_prop : item_prop;
-        grid_type = e.target.value === "1" ? "container" : "item"
+
+    const fn_click_style_option = function(target) {
+        if(target.checked){
+            if(target.getAttribute('data-limit') !== '') {
+                $(target).parent().append(
+                    `
+                    <SELECT>
+                        ${
+                            target.getAttribute('data-limit')
+                            .split(',')
+                            .map((text)=> `<option value='${text}'>${text}</option>`)
+                            .join('')
+                        }
+                    </SELECT>    
+                    `
+                );
+            } else {
+                $(target).parent().append(
+                    `<input type='text' value='${target.getAttribute('data-value')}'/>`
+                );
+            }
+            
+        } else {
+            $(target).next("input").remove();
+        }
+    }
+
+    const fn_make_menu_list = function(type, css_list, value){
         $("#css-list-box").html("")
-        if(e.target.value === "2") {
+        if(type === "item") {
             let item_len = $("#test-grid-container > div").length
             if(!item_len) {
                 alert("ITEM을 먼저 추가해주세요.");
@@ -279,30 +315,53 @@
             }
             $("#css-list-box").append(
                 `
-                <SELECT NAME='grid-item'>
+                <SELECT NAME='grid-item' style='width:100%'>
                 ${
                     Array(item_len)
                     .fill('')
-                    .map((e, i)=> `<option value=${i+1}>${i+1}</option>`)
+                    .map((e, i)=> `<option value=${i+1} ${value == i+1 ? "selected" : ""}>${i+1}</option>`)
                     .join('')
                 }
                 </SELECT>
                 `
             )
         }
+
         for(const css of css_list) {
             $("#css-list-box").append(`
                 <div>
                     <label class='css-list' title='${css.des}'>
                         <input type='checkbox' 
                                 name='${css.prop}'
-                                data-value=''${css.value}
+                                data-value='${css.value}'
                                 data-limit='${css.limit || ""}' />
                         ${css.prop}
                     </label>
                 </div>
             `)
         }
+
+        $("input[type=checkbox][data-value!='']").each((i, target)=>{
+            target.checked = true;
+            fn_click_style_option(target)
+        })
+    }
+
+    $(".type-change").click(function(e){
+        item_list["1"]
+        let css_list = "";   
+        if(e.target.value === "1") {
+            css_list = container_prop
+        } else {
+            css_list = item_list["1"] ? item_list["1"] : item_prop
+        }
+        grid_type = e.target.value === "1" ? "container" : "item"
+        fn_make_menu_list(grid_type, css_list, "1")        
+    })
+
+    $("body").on("change", "select[name=grid-item]", function(e){
+        let css_list = item_list[e.target.value] ? item_list[e.target.value] : item_prop;
+        fn_make_menu_list('item', css_list, e.target.value)
     })
 
     $("body")
@@ -315,29 +374,7 @@
     
     $("body")
     .on("click", "input[type=checkbox]", (e)=>{
-        if(e.target.checked){
-            if(e.target.getAttribute('data-limit') !== '') {
-                $(e.target).parent().append(
-                    `
-                    <SELECT>
-                        ${
-                            e.target.getAttribute('data-limit')
-                            .split(',')
-                            .map((text)=> `<option value='${text}'>${text}</option>`)
-                            .join('')
-                        }
-                    </SELECT>    
-                    `
-                );
-            } else {
-                $(e.target).parent().append(
-                    `<input type='text' />`
-                );
-            }
-            
-        } else {
-            $(e.target).next("input").remove();
-        }
+        fn_click_style_option(e.target)
     });
 
     $(".box-button").click((e)=>{
@@ -351,7 +388,9 @@
                 </div>`
             )
         } else {
-            $("#test-grid-container > div:last-child").remove();
+            let lastChild = $("#test-grid-container > div:last-child");
+            delete item_list[lastChild.attr('data-id')];
+            lastChild.remove();
         }
     })
 
@@ -363,7 +402,7 @@
             let grid_target = 
                 grid_type === "container" 
                 ? container_prop
-                : item_prop
+                : item_prop.map(item => Object.assign({},item));
 
             $(".css-list").each((i, target)=>{
                 if(target.children[0].checked){
@@ -383,6 +422,10 @@
                     return true;
                 }
             })
+            
+            if(grid_type === "item") {
+                item_list[$("select[name=grid-item]").val()] = grid_target
+            }
             fn_admit_style_to_grid();
         }
     })
